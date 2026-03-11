@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YAVER - Altın Alım Satım Tahmin Robotu</title>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.3.0/luxon.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+
+    <style>
+        :root {
+            --primary-cyan: #00BCD4;
+            --primary-yellow: #FFC107;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #1e1b4b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header & Branding */
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--primary-cyan);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 188, 212, 0.2);
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-cyan) 40%, var(--primary-yellow) 60%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+        }
+
+        .brand-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-left: 2px solid var(--primary-yellow);
+            padding-left: 1rem;
+            margin-left: 0.5rem;
+        }
+
+        .brand-subtitle .cn {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--primary-cyan);
+            margin-top: 2px;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Upload Section */
+        .upload-zone {
+            background: rgba(30, 41, 59, 0.5);
+            border: 3px dashed var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            margin: 2rem 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary-cyan);
+            background: rgba(0, 188, 212, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--primary-yellow);
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-cyan);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-cyan);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-cyan);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .stat-delta {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            color: var(--text-secondary);
+        }
+
+        /* Risk Analysis Section */
+        .analysis-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+            margin-left: 1rem;
+        }
+
+        /* Risk Meter */
+        .risk-meter {
+            background: linear-gradient(90deg, var(--success) 0%, var(--warning) 50%, var(--danger) 100%);
+            height: 8px;
+            border-radius: 4px;
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .risk-indicator {
+            position: absolute;
+            top: -6px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 4px solid;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            transition: left 0.5s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .risk-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Account Cards */
+        .account-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .account-card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid;
+            transition: all 0.3s;
+        }
+
+        .account-card.high-risk {
+            border-left-color: var(--danger);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(30, 41, 59, 0.8) 100%);
+        }
+
+        .account-card.medium-risk {
+            border-left-color: var(--warning);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(30, 41, 59, 0.8) 100%);
+        }
+
+        .account-card.low-risk {
+            border-left-color: var(--success);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(30, 41, 59, 0.8) 100%);
+        }
+
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .account-id {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .risk-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .risk-badge.high {
+            background: var(--danger);
+            color: white;
+        }
+
+        .risk-badge.medium {
+            background: var(--warning);
+            color: black;
+        }
+
+        .risk-badge.low {
+            background: var(--success);
+            color: white;
+        }
+
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-cyan);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Charts */
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+            height: 400px;
+            position: relative;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .data-table th {
+            background: rgba(0, 188, 212, 0.1);
+            padding: 0.75rem;
+            text-align: left;
+            color: var(--primary-cyan);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .data-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .data-table tr:hover {
+            background: rgba(0, 188, 212, 0.05);
+        }
+
+        .data-table .negative {
+            color: var(--danger);
+        }
+
+        .data-table .positive {
+            color: var(--success);
+        }
+
+        /* Loading */
+        .loader {
+            display: none;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary-cyan);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .brand-container {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .account-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-cyan));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 188, 212, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--primary-yellow);
+            color: var(--primary-yellow);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 193, 7, 0.1);
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <header class="header">
+        <div class="brand-container">
+            <div class="logo">YAVER</div>
+            <div class="brand-subtitle" style="flex-direction: column; align-items: flex-start;">
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
+                    Altın Alım Satım Tahmin Robotu
+                </div>
+                <span class="cn" style="border-left: none; padding-left: 0; margin-left: 0; font-size: 0.85rem;">
+                    金币交易预测机器人 | Gold Transaction AI
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📊</div>
+            <h2>Excel Dosyası Yükleyin</h2>
+            <p>AccountGoldRecordExport.xlsx dosyasını sürükleyin veya tıklayarak seçin</p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+            <button class="btn" style="margin-top: 1rem;" onclick="document.getElementById('fileInput').click()">
+                Dosya Seç
+            </button>
+        </div>
+
+        <div class="loader" id="loader"></div>
+
+        <!-- Dashboard (Initially Hidden) -->
+        <div id="dashboard" class="hidden">
+            <!-- Overview Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Toplam Hesap</div>
+                    <div class="stat-value" id="totalAccounts">0</div>
+                    <div class="stat-delta">Analiz edilen hesap sayısı</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Yüksek Riskli</div>
+                    <div class="stat-value" id="highRiskCount" style="color: var(--danger);">0</div>
+                    <div class="stat-delta">RMT şüphesi yüksek</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Ortalama Risk Skoru</div>
+                    <div class="stat-value" id="avgRiskScore">0</div>
+                    <div class="stat-delta">0-100 arası normalize</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Toplam İşlem Hacmi</div>
+                    <div class="stat-value" id="totalVolume">0M</div>
+                    <div class="stat-delta">Altın bazında</div>
+                </div>
+            </div>
+
+            <!-- Analysis Section -->
+            <div class="analysis-section">
+                <h2 class="section-title">🎯 Risk Dağılımı</h2>
+
+                <div class="risk-meter">
+                    <div class="risk-indicator" id="riskIndicator" style="left: 0%; border-color: var(--success);"></div>
+                </div>
+                <div class="risk-labels">
+                    <span>Güvenli (0-30)</span>
+                    <span>Orta (31-60)</span>
+                    <span>Yüksek Risk (61-100)</span>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h3 style="color: var(--primary-yellow); margin-bottom: 1rem;">⚠️ Kritik Bulgular</h3>
+                    <ul id="criticalFindings" style="list-style: none; padding: 0;">
+                        <!-- Dynamic content -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                <div class="chart-container">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="transactionPatternChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Account Cards -->
+            <div class="analysis-section">
+                <h2 class="section-title">🔍 Hesap Bazlı Detaylı Analiz</h2>
+                <div id="accountCards" class="account-grid">
+                    <!-- Dynamic account cards -->
+                </div>
+            </div>
+
+            <!-- Detailed Table -->
+            <div class="analysis-section">
+                <h2 class="section-title">📋 İşlem Geçmişi</h2>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Hesap ID</th>
+                                <th>İşlem Tipi</th>
+                                <th>Miktar</th>
+                                <th>Bakiye Öncesi</th>
+                                <th>Bakiye Sonrası</th>
+                                <th>Zaman</th>
+                                <th>Risk Faktörü</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTable">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // YAVER Statistical Analysis Engine
+        class YAVERAnalyzer {
+            constructor() {
+                this.betAmounts = [500, 1000, 3000, 10000, 100000, 200000, 300000, 500000, 1000000];
+                this.normalGameDuration = 150; // seconds
+                this.data = [];
+                this.accounts = new Map();
+            }
+
+            // Z-Score calculation for outlier detection
+            calculateZScore(value, mean, std) {
+                return std === 0 ? 0 : (value - mean) / std;
+            }
+
+            // Statistical analysis of game durations
+            analyzeGameSpeed(transactions) {
+                const games = [];
+                let currentGame = null;
+
+                transactions.forEach((tx, idx) => {
+                    if (tx.type === '游戏报名费') {
+                        currentGame = {
+                            start: tx.timestamp,
+                            bet: Math.abs(tx.amount),
+                            startIdx: idx
+                        };
+                    } else if (tx.type === '游戏结算' && currentGame) {
+                        const duration = (tx.timestamp - currentGame.start) / 1000;
+                        games.push({
+                            duration,
+                            bet: currentGame.bet,
+                            result: tx.amount,
+                            profit: tx.amount - currentGame.bet,
+                            roi: (tx.amount - currentGame.bet) / currentGame.bet
+                        });
+                        currentGame = null;
+                    }
+                });
+
+                if (games.length === 0) return { risk: 0, games: [] };
+
+                const durations = games.map(g => g.duration);
+                const mean = durations.reduce((a, b) => a + b, 0) / durations.length;
+                const variance = durations.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / durations.length;
+                const std = Math.sqrt(variance);
+
+                let riskScore = 0;
+
+                // Suspicious speed: < 60 seconds (2.5x faster than normal 150s)
+                const fastGames = games.filter(g => g.duration < 60).length;
+                if (fastGames > 0) {
+                    riskScore += Math.min(30, (fastGames / games.length) * 50);
+                }
+
+                // Suspicious slowness: > 300 seconds (AFK or delaying)
+                const slowGames = games.filter(g => g.duration > 300).length;
+                if (slowGames > 0) {
+                    riskScore += Math.min(10, (slowGames / games.length) * 20);
+                }
+
+                // High variance in duration (bot-like consistency)
+                const cv = std / mean; // Coefficient of variation
+                if (cv < 0.1 && games.length > 5) {
+                    riskScore += 15; // Too consistent, possibly automated
+                }
+
+                return { risk: riskScore, games, meanDuration: mean };
+            }
+
+            // Analyze betting patterns for RMT (lose high, win low)
+            analyzeBettingPattern(games) {
+                if (games.length < 3) return { risk: 0, pattern: 'insufficient_data' };
+
+                // Separate by bet size
+                const lowBets = games.filter(g => g.bet <= 10000);
+                const highBets = games.filter(g => g.bet >= 100000);
+
+                if (highBets.length === 0) return { risk: 0, pattern: 'no_high_stakes' };
+
+                const lowBetROI = lowBets.reduce((acc, g) => acc + g.roi, 0) / (lowBets.length || 1);
+                const highBetROI = highBets.reduce((acc, g) => acc + g.roi, 0) / (highBets.length || 1);
+
+                let risk = 0;
+                let pattern = 'normal';
+
+                // Classic RMT pattern: Win small, lose big
+                if (lowBetROI > 0.1 && highBetROI < -0.3) {
+                    risk += 35;
+                    pattern = 'classic_rmt';
+                }
+
+                // Consistent high losses (money laundering via intentional loss)
+                const highLossRate = highBets.filter(g => g.roi < 0).length / highBets.length;
+                if (highLossRate > 0.7 && highBets.length >= 3) {
+                    risk += 25;
+                    pattern = 'intentional_loss';
+                }
+
+                // Sudden bet escalation (after building trust with small wins)
+                const chronological = [...games].sort((a, b) => a.time - b.time);
+                if (chronological.length >= 4) {
+                    const firstHalf = chronological.slice(0, Math.floor(chronological.length / 2));
+                    const secondHalf = chronological.slice(Math.floor(chronological.length / 2));
+
+                    const firstAvg = firstHalf.reduce((acc, g) => acc + g.bet, 0) / firstHalf.length;
+                    const secondAvg = secondHalf.reduce((acc, g) => acc + g.bet, 0) / secondHalf.length;
+
+                    if (secondAvg > firstAvg * 10 && secondHalf.filter(g => g.roi < 0).length > secondHalf.length * 0.6) {
+                        risk += 20;
+                        pattern = 'escalation_loss';
+                    }
+                }
+
+                return { risk, pattern, lowBetROI, highBetROI };
+            }
+
+            // Analyze friend transfers correlation with losses
+            analyzeTransferCorrelation(transactions) {
+                const friendTransfers = transactions.filter(tx => 
+                    tx.type.includes('领取好友赠送的金币')
+                );
+
+                if (friendTransfers.length === 0) return { risk: 0, transfers: [] };
+
+                let risk = 0;
+                const suspiciousTransfers = [];
+
+                friendTransfers.forEach(tx => {
+                    // Look for large loss within 10 minutes before transfer
+                    const tenMinBefore = tx.timestamp - (10 * 60 * 1000);
+                    const recentGames = transactions.filter(t => 
+                        t.timestamp >= tenMinBefore && 
+                        t.timestamp < tx.timestamp &&
+                        t.type === '游戏结算' &&
+                        t.amount < 0
+                    );
+
+                    if (recentGames.length > 0) {
+                        const totalLoss = Math.abs(recentGames.reduce((acc, g) => acc + g.amount, 0));
+                        if (totalLoss > 50000 && tx.amount < totalLoss * 0.1) {
+                            risk += 5; // Small compensation after big loss
+                            suspiciousTransfers.push({
+                                transfer: tx,
+                                loss: totalLoss,
+                                timeDiff: (tx.timestamp - recentGames[recentGames.length - 1].timestamp) / 1000
+                            });
+                        }
+                    }
+                });
+
+                // Frequency analysis
+                const dailyTransfers = this.groupByDay(friendTransfers);
+                const avgDaily = Object.values(dailyTransfers).reduce((a, b) => a + b, 0) / Object.keys(dailyTransfers).length;
+
+                if (avgDaily > 3) {
+                    risk += 15; // More than 3 friend transfers per day average
+                }
+
+                // Check for only receiving, never sending
+                const hasSent = transactions.some(tx => tx.type.includes('赠送') && tx.amount < 0);
+                if (!hasSent && friendTransfers.length > 5) {
+                    risk += 20; // One-way street, mule account behavior
+                }
+
+                return { risk, transfers: suspiciousTransfers, avgDaily };
+            }
+
+            // Calculate frequency of play (bot detection)
+            analyzeFrequency(transactions) {
+                const gameStarts = transactions.filter(tx => tx.type === '游戏报名费');
+                if (gameStarts.length < 2) return { risk: 0 };
+
+                const intervals = [];
+                for (let i = 1; i < gameStarts.length; i++) {
+                    const diff = (gameStarts[i].timestamp - gameStarts[i-1].timestamp) / 1000;
+                    intervals.push(diff);
+                }
+
+                const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                const variance = intervals.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / intervals.length;
+                const std = Math.sqrt(variance);
+
+                let risk = 0;
+
+                // Suspiciously fast consecutive games (< 10 seconds between)
+                const fastIntervals = intervals.filter(i => i < 10).length;
+                if (fastIntervals > 0) {
+                    risk += Math.min(20, fastIntervals * 5);
+                }
+
+                // Inhuman consistency (coefficient of variation < 0.15)
+                const cv = std / mean;
+                if (cv < 0.15 && intervals.length > 10) {
+                    risk += 15;
+                }
+
+                // Marathon sessions (> 20 games per hour)
+                const hourlyRate = this.calculateHourlyRate(gameStarts);
+                if (hourlyRate > 20) {
+                    risk += 10;
+                }
+
+                return { risk, meanInterval: mean, cv };
+            }
+
+            // Statistical outlier detection using IQR method
+            detectOutliers(values) {
+                const sorted = [...values].sort((a, b) => a - b);
+                const q1 = sorted[Math.floor(sorted.length * 0.25)];
+                const q3 = sorted[Math.floor(sorted.length * 0.75)];
+                const iqr = q3 - q1;
+                const lowerBound = q1 - 1.5 * iqr;
+                const upperBound = q3 + 1.5 * iqr;
+
+                return values.map(v => ({
+                    value: v,
+                    isOutlier: v < lowerBound || v > upperBound,
+                    zScore: (v - (q1 + q3) / 2) / (iqr || 1)
+                }));
+            }
+
+            // Main analysis function
+            analyzeAccount(accountId, transactions) {
+                // Sort by time
+                transactions.sort((a, b) => a.timestamp - b.timestamp);
+
+                // Run all analyses
+                const speedAnalysis = this.analyzeGameSpeed(transactions);
+                const bettingAnalysis = this.analyzeBettingPattern(speedAnalysis.games);
+                const transferAnalysis = this.analyzeTransferCorrelation(transactions);
+                const frequencyAnalysis = this.analyzeFrequency(transactions);
+
+                // Aggregate risk score (weighted)
+                const weights = {
+                    betting: 0.35,
+                    speed: 0.25,
+                    transfer: 0.25,
+                    frequency: 0.15
+                };
+
+                const totalRisk = 
+                    (bettingAnalysis.risk * weights.betting) +
+                    (speedAnalysis.risk * weights.speed) +
+                    (transferAnalysis.risk * weights.transfer) +
+                    (frequencyAnalysis.risk * weights.frequency);
+
+                const normalizedRisk = Math.min(100, Math.max(0, totalRisk));
+
+                // Calculate additional statistics
+                const totalVolume = transactions.reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+                const gameVolume = speedAnalysis.games.reduce((acc, g) => acc + g.bet, 0);
+                const profitLoss = speedAnalysis.games.reduce((acc, g) => acc + g.profit, 0);
+
+                return {
+                    accountId,
+                    riskScore: normalizedRisk,
+                    riskLevel: normalizedRisk > 60 ? 'high' : normalizedRisk > 30 ? 'medium' : 'low',
+                    details: {
+                        speed: speedAnalysis,
+                        betting: bettingAnalysis,
+                        transfer: transferAnalysis,
+                        frequency: frequencyAnalysis
+                    },
+                    stats: {
+                        totalGames: speedAnalysis.games.length,
+                        totalVolume,
+                        gameVolume,
+                        profitLoss,
+                        avgDuration: speedAnalysis.meanDuration,
+                        friendTransfers: transferAnalysis.transfers.length
+                    },
+                    transactions
+                };
+            }
+
+            // Helper functions
+            groupByDay(transactions) {
+                const days = {};
+                transactions.forEach(tx => {
+                    const date = new Date(tx.timestamp).toDateString();
+                    days[date] = (days[date] || 0) + 1;
+                });
+                return days;
+            }
+
+            calculateHourlyRate(timestamps) {
+                if (timestamps.length < 2) return 0;
+                const hours = (timestamps[timestamps.length - 1].timestamp - timestamps[0].timestamp) / 3600000;
+                return hours > 0 ? timestamps.length / hours : 0;
+            }
+
+            processExcel(data) {
+                const rows = XLSX.utils.sheet_to_json(data, { header: 1 });
+                const transactions = [];
+
+                // Skip header row (index 0 and 1 based on the format)
+                for (let i = 2; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row[0]) continue;
+
+                    const tx = {
+                        accountId: String(row[0]),
+                        gameId: row[1],
+                        businessId: row[2],
+                        type: row[3],
+                        amount: parseFloat(row[4]) || 0,
+                        balanceBefore: parseFloat(row[5]) || 0,
+                        balanceAfter: parseFloat(row[6]) || 0,
+                        timestamp: this.parseDate(row[7]),
+                        rawTime: row[7]
+                    };
+
+                    transactions.push(tx);
+                }
+
+                // Group by account
+                const accounts = {};
+                transactions.forEach(tx => {
+                    if (!accounts[tx.accountId]) accounts[tx.accountId] = [];
+                    accounts[tx.accountId].push(tx);
+                });
+
+                // Analyze each account
+                const results = [];
+                for (const [accountId, txs] of Object.entries(accounts)) {
+                    results.push(this.analyzeAccount(accountId, txs));
+                }
+
+                return results.sort((a, b) => b.riskScore - a.riskScore);
+            }
+
+            parseDate(dateStr) {
+                if (!dateStr) return new Date();
+                // Handle format: 2026/03/11 09:36:17
+                if (typeof dateStr === 'string') {
+                    const parts = dateStr.match(/(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+                    if (parts) {
+                        return new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5], parts[6]);
+                    }
+                }
+                return new Date(dateStr);
+            }
+        }
+
+        // UI Controller
+        const analyzer = new YAVERAnalyzer();
+        let currentData = [];
+        let charts = {};
+
+        // File Upload Handling
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const loader = document.getElementById('loader');
+        const dashboard = document.getElementById('dashboard');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            loader.style.display = 'block';
+            uploadZone.classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                    currentData = analyzer.processExcel(firstSheet);
+
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        dashboard.classList.remove('hidden');
+                        renderDashboard();
+                    }, 500);
+                } catch (error) {
+                    alert('Dosya okuma hatası: ' + error.message);
+                    loader.style.display = 'none';
+                    uploadZone.classList.remove('hidden');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderDashboard() {
+            updateOverviewStats();
+            renderRiskMeter();
+            renderCriticalFindings();
+            renderCharts();
+            renderAccountCards();
+            renderTransactionTable();
+        }
+
+        function updateOverviewStats() {
+            document.getElementById('totalAccounts').textContent = currentData.length;
+            document.getElementById('highRiskCount').textContent = 
+                currentData.filter(a => a.riskLevel === 'high').length;
+
+            const avgRisk = currentData.reduce((acc, a) => acc + a.riskScore, 0) / currentData.length;
+            document.getElementById('avgRiskScore').textContent = avgRisk.toFixed(1);
+
+            const totalVol = currentData.reduce((acc, a) => acc + a.stats.totalVolume, 0) / 1000000;
+            document.getElementById('totalVolume').textContent = totalVol.toFixed(2) + 'M';
+        }
+
+        function renderRiskMeter() {
+            const avgRisk = currentData.reduce((acc, a) => acc + a.riskScore, 0) / currentData.length;
+            const indicator = document.getElementById('riskIndicator');
+            indicator.style.left = avgRisk + '%';
+
+            if (avgRisk > 60) indicator.style.borderColor = 'var(--danger)';
+            else if (avgRisk > 30) indicator.style.borderColor = 'var(--warning)';
+            else indicator.style.borderColor = 'var(--success)';
+        }
+
+        function renderCriticalFindings() {
+            const findings = [];
+
+            currentData.forEach(account => {
+                if (account.riskScore > 60) {
+                    const d = account.details;
+                    let reason = '';
+
+                    if (d.betting.pattern === 'classic_rmt') {
+                        reason = 'Klasik RMT patternı: Düşük bahiste kazanma, yüksek bahiste kaybetme';
+                    } else if (d.betting.pattern === 'intentional_loss') {
+                        reason = 'Kasıtlı kayıp şüphesi (%70+ yüksek bahis kaybı)';
+                    } else if (d.transfer.risk > 20) {
+                        reason = 'Tek yönlü transfer (Sürekli alma, hiç vermeme)';
+                    } else if (d.speed.risk > 20) {
+                        reason = 'Şüpheli oyun hızı (< 60 saniye)';
+                    }
+
+                    if (reason) {
+                        findings.push(`<li style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border-left: 3px solid var(--danger);">
+                            <strong>${account.accountId}</strong>: ${reason} (Risk: ${account.riskScore.toFixed(0)}%)
+                        </li>`);
+                    }
+                }
+            });
+
+            document.getElementById('criticalFindings').innerHTML = 
+                findings.length > 0 ? findings.join('') : '<li style="color: var(--success);">✓ Kritik bulgu tespit edilmedi</li>';
+        }
+
+        function renderCharts() {
+            // Risk Distribution Chart
+            const ctx1 = document.getElementById('riskDistributionChart').getContext('2d');
+            const riskRanges = ['0-30 (Güvenli)', '31-60 (Orta)', '61-100 (Yüksek)'];
+            const riskCounts = [
+                currentData.filter(a => a.riskScore <= 30).length,
+                currentData.filter(a => a.riskScore > 30 && a.riskScore <= 60).length,
+                currentData.filter(a => a.riskScore > 60).length
+            ];
+
+            if (charts.riskDist) charts.riskDist.destroy();
+            charts.riskDist = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: riskRanges,
+                    datasets: [{
+                        data: riskCounts,
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Risk Dağılımı',
+                            color: '#f1f5f9'
+                        },
+                        legend: {
+                            labels: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+
+            // Transaction Pattern Chart
+            const ctx2 = document.getElementById('transactionPatternChart').getContext('2d');
+            const sortedAccounts = currentData.slice(0, 10); // Top 10
+
+            if (charts.pattern) charts.pattern.destroy();
+            charts.pattern = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: sortedAccounts.map(a => a.accountId.substring(0, 8) + '...'),
+                    datasets: [
+                        {
+                            label: 'Oyun Hacmi',
+                            data: sortedAccounts.map(a => a.stats.gameVolume / 1000),
+                            backgroundColor: 'rgba(0, 188, 212, 0.5)',
+                            borderColor: '#00BCD4',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Kar/Zarar',
+                            data: sortedAccounts.map(a => a.stats.profitLoss / 1000),
+                            backgroundColor: sortedAccounts.map(a => 
+                                a.stats.profitLoss < 0 ? 'rgba(239, 68, 68, 0.5)' : 'rgba(16, 185, 129, 0.5)'
+                            ),
+                            borderColor: sortedAccounts.map(a => 
+                                a.stats.profitLoss < 0 ? '#ef4444' : '#10b981'
+                            ),
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'İlk 10 Hesap: Oyun Hacmi vs Kar/Zarar (Bin Altın)',
+                            color: '#f1f5f9'
+                        },
+                        legend: {
+                            labels: { color: '#94a3b8' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderAccountCards() {
+            const container = document.getElementById('accountCards');
+
+            const cards = currentData.map(account => {
+                const d = account.details;
+                const riskColor = account.riskLevel === 'high' ? 'high' : 
+                                 account.riskLevel === 'medium' ? 'medium' : 'low';
+
+                return `
+                    <div class="account-card ${account.riskLevel}-risk">
+                        <div class="account-header">
+                            <div class="account-id">ID: ${account.accountId}</div>
+                            <span class="risk-badge ${riskColor}">${account.riskScore.toFixed(0)}%</span>
+                        </div>
+
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                            ${getRiskDescription(account)}
+                        </div>
+
+                        <div class="metrics-row">
+                            <div class="metric">
+                                <div class="metric-value">${account.stats.totalGames}</div>
+                                <div class="metric-label">Oyun Sayısı</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value" style="color: ${account.stats.profitLoss < 0 ? 'var(--danger)' : 'var(--success)'};">
+                                    ${(account.stats.profitLoss / 1000).toFixed(1)}K
+                                </div>
+                                <div class="metric-label">Net K/Z</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${account.stats.avgDuration ? account.stats.avgDuration.toFixed(0) : 'N/A'}s</div>
+                                <div class="metric-label">Ort. Süre</div>
+                            </div>
+                        </div>
+
+                        ${account.riskScore > 50 ? `
+                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem;">
+                                <strong style="color: var(--danger);">⚠️ Şüpheli Pattern:</strong><br>
+                                ${d.betting.pattern !== 'normal' ? '• ' + d.betting.pattern + '<br>' : ''}
+                                ${d.transfer.risk > 15 ? '• Tek yönlü transfer aktivitesi<br>' : ''}
+                                ${d.speed.risk > 15 ? '• Anormal oyun hızı<br>' : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = cards;
+        }
+
+        function getRiskDescription(account) {
+            const d = account.details;
+            if (account.riskScore > 70) return 'Yüksek RMT olasılığı - Detaylı inceleme önerilir';
+            if (account.riskScore > 40) return 'Şüpheli aktivite patterni tespit edildi';
+            if (d.transfer.avgDaily > 3) return 'Yüksek transfer frekansı';
+            if (d.speed.meanDuration && d.speed.meanDuration < 100) return 'Hızlı oyun stili';
+            return 'Normal aktivite profili';
+        }
+
+        function renderTransactionTable() {
+            const tbody = document.getElementById('transactionTable');
+            let html = '';
+
+            currentData.forEach(account => {
+                account.transactions.slice(0, 5).forEach(tx => { // Show last 5 per account
+                    const amountClass = tx.amount < 0 ? 'negative' : 'positive';
+                    const riskFactor = determineRiskFactor(tx, account);
+
+                    html += `
+                        <tr>
+                            <td>${tx.accountId}</td>
+                            <td>${tx.type}</td>
+                            <td class="${amountClass}">${tx.amount.toLocaleString()}</td>
+                            <td>${tx.balanceBefore.toLocaleString()}</td>
+                            <td>${tx.balanceAfter.toLocaleString()}</td>
+                            <td>${tx.rawTime}</td>
+                            <td>${riskFactor}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function determineRiskFactor(tx, account) {
+            if (tx.type.includes('领取好友赠送的金币')) {
+                return '<span style="color: var(--warning);">Transfer</span>';
+            }
+            if (tx.type === '游戏报名费' && tx.amount < -200000) {
+                return '<span style="color: var(--danger);">Yüksek Bahis</span>';
+            }
+            if (account.riskScore > 60) {
+                return '<span style="color: var(--danger);">Şüpheli</span>';
+            }
+            return '<span style="color: var(--success);">Normal</span>';
+        }
+
+        // Initialize
+        console.log('YAVER - YAlla VErimlilik Sistemi başlatıldı');
+        console.log('Statistical Analysis Engine v1.0');
+    </script>
+</body>
+</html>
