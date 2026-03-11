@@ -443,11 +443,11 @@
         <div class="brand-container">
             <div class="logo">YAVER</div>
             <div class="brand-subtitle" style="flex-direction: column; align-items: flex-start;">
-                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
-                    Altın Alım Satım Tahmin Robotu
+                <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; letter-spacing: 0.5px;">
+                    Risk Analiz Robotu
                 </div>
-                <span class="cn" style="border-left: none; padding-left: 0; margin-left: 0; font-size: 0.85rem;">
-                    金币交易预测机器人 | Gold Transaction AI
+                <span class="cn" style="border-left: none; padding-left: 0; margin-left: 0; font-size: 0.9rem; color: var(--primary-cyan);">
+                    风险分析机器人 / Risk Analysis AI
                 </span>
             </div>
         </div>
@@ -457,11 +457,11 @@
         <!-- Upload Section -->
         <div class="upload-zone" id="uploadZone">
             <div class="upload-icon">📊</div>
-            <h2>Excel Dosyası Yükleyin</h2>
-            <p>AccountGoldRecordExport.xlsx dosyasını sürükleyin veya tıklayarak seçin</p>
+            <h2>Excel Dosyası Yükleyin / 上传Excel文件</h2>
+            <p>AccountGoldRecordExport.xlsx dosyasını sürükleyin veya tıklayarak seçin<br>拖拽上传或点击选择文件</p>
             <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
             <button class="btn" style="margin-top: 1rem;" onclick="document.getElementById('fileInput').click()">
-                Dosya Seç
+                Dosya Seç / 选择文件
             </button>
         </div>
 
@@ -472,42 +472,42 @@
             <!-- Overview Stats -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Toplam Hesap</div>
+                    <div class="stat-label">Toplam Hesap / 总账户数</div>
                     <div class="stat-value" id="totalAccounts">0</div>
-                    <div class="stat-delta">Analiz edilen hesap sayısı</div>
+                    <div class="stat-delta">Analiz edilen hesap / 分析账户</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Yüksek Riskli</div>
+                    <div class="stat-label">Yüksek Riskli / 高风险</div>
                     <div class="stat-value" id="highRiskCount" style="color: var(--danger);">0</div>
-                    <div class="stat-delta">RMT şüphesi yüksek</div>
+                    <div class="stat-delta">RMT şüphesi / 可疑交易</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Ortalama Risk Skoru</div>
+                    <div class="stat-label">Ortalama Risk / 平均风险分</div>
                     <div class="stat-value" id="avgRiskScore">0</div>
-                    <div class="stat-delta">0-100 arası normalize</div>
+                    <div class="stat-delta">Normalize skor / 标准化分数</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Toplam İşlem Hacmi</div>
+                    <div class="stat-label">İşlem Hacmi / 交易总额</div>
                     <div class="stat-value" id="totalVolume">0M</div>
-                    <div class="stat-delta">Altın bazında</div>
+                    <div class="stat-delta">金币单位 / 金币单位</div>
                 </div>
             </div>
 
             <!-- Analysis Section -->
             <div class="analysis-section">
-                <h2 class="section-title">🎯 Risk Dağılımı</h2>
+                <h2 class="section-title">🎯 Risk Dağılımı / 风险分布</h2>
 
                 <div class="risk-meter">
                     <div class="risk-indicator" id="riskIndicator" style="left: 0%; border-color: var(--success);"></div>
                 </div>
                 <div class="risk-labels">
-                    <span>Güvenli (0-30)</span>
-                    <span>Orta (31-60)</span>
-                    <span>Yüksek Risk (61-100)</span>
+                    <span>Güvenli 安全 (0-30)</span>
+                    <span>Orta 中等 (31-60)</span>
+                    <span>Yüksek 高 (61-100)</span>
                 </div>
 
                 <div style="margin-top: 2rem;">
-                    <h3 style="color: var(--primary-yellow); margin-bottom: 1rem;">⚠️ Kritik Bulgular</h3>
+                    <h3 style="color: var(--primary-yellow); margin-bottom: 1rem;">⚠️ Kritik Bulgular / 关键发现</h3>
                     <ul id="criticalFindings" style="list-style: none; padding: 0;">
                         <!-- Dynamic content -->
                     </ul>
@@ -526,7 +526,7 @@
 
             <!-- Account Cards -->
             <div class="analysis-section">
-                <h2 class="section-title">🔍 Hesap Bazlı Detaylı Analiz</h2>
+                <h2 class="section-title">🔍 Hesap Analizi / 账户分析</h2>
                 <div id="accountCards" class="account-grid">
                     <!-- Dynamic account cards -->
                 </div>
@@ -534,18 +534,18 @@
 
             <!-- Detailed Table -->
             <div class="analysis-section">
-                <h2 class="section-title">📋 İşlem Geçmişi</h2>
+                <h2 class="section-title">📋 İşlem Geçmişi / 交易记录</h2>
                 <div style="overflow-x: auto;">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Hesap ID</th>
-                                <th>İşlem Tipi</th>
-                                <th>Miktar</th>
-                                <th>Bakiye Öncesi</th>
-                                <th>Bakiye Sonrası</th>
-                                <th>Zaman</th>
-                                <th>Risk Faktörü</th>
+                                <th>Hesap ID / 账户号</th>
+                                <th>İşlem Tipi / 交易类型</th>
+                                <th>Miktar / 金额</th>
+                                <th>Bakiye Öncesi / 之前余额</th>
+                                <th>Bakiye Sonrası / 之后余额</th>
+                                <th>Zaman / 时间</th>
+                                <th>Risk Faktörü / 风险因素</th>
                             </tr>
                         </thead>
                         <tbody id="transactionTable">
@@ -1016,7 +1016,7 @@
             });
 
             document.getElementById('criticalFindings').innerHTML = 
-                findings.length > 0 ? findings.join('') : '<li style="color: var(--success);">✓ Kritik bulgu tespit edilmedi</li>';
+                findings.length > 0 ? findings.join('') : '<li style="color: var(--success);">✓ Kritik bulgu tespit edilmedi / 未发现异常</li>';
         }
 
         function renderCharts() {
@@ -1046,7 +1046,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Risk Dağılımı',
+                            text: 'Risk Dağılımı / 风险分布',
                             color: '#f1f5f9'
                         },
                         legend: {
@@ -1092,7 +1092,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'İlk 10 Hesap: Oyun Hacmi vs Kar/Zarar (Bin Altın)',
+                            text: 'İlk 10 Hesap / 前10账户: Oyun Hacmi / 游戏额 vs Kar/Zarar / 盈亏',
                             color: '#f1f5f9'
                         },
                         legend: {
@@ -1135,26 +1135,26 @@
                         <div class="metrics-row">
                             <div class="metric">
                                 <div class="metric-value">${account.stats.totalGames}</div>
-                                <div class="metric-label">Oyun Sayısı</div>
+                                <div class="metric-label">Oyun / 游戏数</div>
                             </div>
                             <div class="metric">
                                 <div class="metric-value" style="color: ${account.stats.profitLoss < 0 ? 'var(--danger)' : 'var(--success)'};">
                                     ${(account.stats.profitLoss / 1000).toFixed(1)}K
                                 </div>
-                                <div class="metric-label">Net K/Z</div>
+                                <div class="metric-label">K/Z / 盈亏</div>
                             </div>
                             <div class="metric">
                                 <div class="metric-value">${account.stats.avgDuration ? account.stats.avgDuration.toFixed(0) : 'N/A'}s</div>
-                                <div class="metric-label">Ort. Süre</div>
+                                <div class="metric-label">Süre / 时长</div>
                             </div>
                         </div>
 
                         ${account.riskScore > 50 ? `
                             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem;">
                                 <strong style="color: var(--danger);">⚠️ Şüpheli Pattern:</strong><br>
-                                ${d.betting.pattern !== 'normal' ? '• ' + d.betting.pattern + '<br>' : ''}
-                                ${d.transfer.risk > 15 ? '• Tek yönlü transfer aktivitesi<br>' : ''}
-                                ${d.speed.risk > 15 ? '• Anormal oyun hızı<br>' : ''}
+                                ${d.betting.pattern !== 'normal' ? '• ' + d.betting.pattern + ' / 模式<br>' : ''}
+                                ${d.transfer.risk > 15 ? '• Tek yönlü transfer / 单向转账<br>' : ''}
+                                ${d.speed.risk > 15 ? '• Anormal hız / 异常速度<br>' : ''}
                             </div>
                         ` : ''}
                     </div>
@@ -1166,11 +1166,11 @@
 
         function getRiskDescription(account) {
             const d = account.details;
-            if (account.riskScore > 70) return 'Yüksek RMT olasılığı - Detaylı inceleme önerilir';
-            if (account.riskScore > 40) return 'Şüpheli aktivite patterni tespit edildi';
-            if (d.transfer.avgDaily > 3) return 'Yüksek transfer frekansı';
-            if (d.speed.meanDuration && d.speed.meanDuration < 100) return 'Hızlı oyun stili';
-            return 'Normal aktivite profili';
+            if (account.riskScore > 70) return 'Yüksek RMT olasılığı / 高度可疑 - İnceleme / 需审查';
+            if (account.riskScore > 40) return 'Şüpheli aktivite / 异常活动 - Pattern / 模式';
+            if (d.transfer.avgDaily > 3) return 'Yüksek transfer / 高频转账 - Frekans / 频率';
+            if (d.speed.meanDuration && d.speed.meanDuration < 100) return 'Hızlı oyun / 快速游戏 - Stil / 风格';
+            return 'Normal aktivite / 正常活动 - Profil / 档案';
         }
 
         function renderTransactionTable() {
@@ -1201,15 +1201,15 @@
 
         function determineRiskFactor(tx, account) {
             if (tx.type.includes('领取好友赠送的金币')) {
-                return '<span style="color: var(--warning);">Transfer</span>';
+                return '<span style="color: var(--warning);">Transfer / 转账</span>';
             }
             if (tx.type === '游戏报名费' && tx.amount < -200000) {
-                return '<span style="color: var(--danger);">Yüksek Bahis</span>';
+                return '<span style="color: var(--danger);">Yüksek Bahis / 高赌注</span>';
             }
             if (account.riskScore > 60) {
-                return '<span style="color: var(--danger);">Şüpheli</span>';
+                return '<span style="color: var(--danger);">Şüpheli / 可疑</span>';
             }
-            return '<span style="color: var(--success);">Normal</span>';
+            return '<span style="color: var(--success);">Normal / 正常</span>';
         }
 
         // Initialize
