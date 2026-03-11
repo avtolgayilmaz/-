@@ -849,44 +849,106 @@
                 return hours > 0 ? timestamps.length / hours : 0;
             }
 
-            processExcel(data) {
+            processExcel(data, fileName = 'unknown') {
                 const rows = XLSX.utils.sheet_to_json(data, { header: 1 });
+
+                // Dosya tipi algılama
+                const headers = rows[0] || [];
+                const isGameStatement = headers.includes('房间ID') || headers.includes('游戏时长');
+                const isGoldRecord = headers.includes('账号') || headers.includes('金币值');
+
                 const transactions = [];
 
-                // Skip header row (index 0 and 1 based on the format)
-                for (let i = 2; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (!row[0]) continue;
+                if (isGameStatement) {
+                    // Oyun detay dosyası (AccountGameStatementExport)
+                    // Tüm kayıtlar tek hesaba ait, room ID'ler oyun ID'si
+                    const accountId = fileName.replace('.xlsx', '').replace('.xls', '') || 'Hesap_1';
 
-                    const tx = {
-                        accountId: String(row[0]),
-                        gameId: row[1],
-                        businessId: row[2],
-                        type: row[3],
-                        amount: parseFloat(row[4]) || 0,
-                        balanceBefore: parseFloat(row[5]) || 0,
-                        balanceAfter: parseFloat(row[6]) || 0,
-                        timestamp: this.parseDate(row[7]),
-                        rawTime: row[7]
-                    };
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row[0]) continue;
 
-                    transactions.push(tx);
+                        // Sütun indekslerini bul
+                        const roomId = row[0]; // 房间ID
+                        const gameType = row[1]; // 类型
+                        const mode = row[3]; // 模式
+                        const playType = row[4]; // 玩法
+                        const betAmount = parseFloat(row[6]) || 0; // 筹码
+                        const tableDuration = parseFloat(row[7]) || 0; // 桌子时长
+                        const gameDuration = parseFloat(row[8]) || 0; // 游戏时长 (saniye)
+                        const result = row[9]; // 胜负 (胜利/失败)
+                        const goldChange = parseFloat(row[11]) || 0; // 游戏金币结算
+                        const startTime = row[12]; // 游戏开始时间
+                        const endTime = row[13]; // 游戏结束时间
+
+                        // Oyun başlangıcı (kayıt ücreti gibi)
+                        transactions.push({
+                            accountId: accountId,
+                            gameId: roomId,
+                            type: '游戏报名费',
+                            amount: -betAmount,
+                            timestamp: this.parseDate(startTime),
+                            rawTime: startTime,
+                            gameDuration: gameDuration,
+                            tableDuration: tableDuration,
+                            result: result
+                        });
+
+                        // Oyun sonuçlanması
+                        transactions.push({
+                            accountId: accountId,
+                            gameId: roomId,
+                            type: '游戏结算',
+                            amount: goldChange,
+                            timestamp: this.parseDate(endTime),
+                            rawTime: endTime,
+                            gameDuration: gameDuration,
+                            result: result
+                        });
+                    }
+
+                    return [this.analyzeAccount(accountId, transactions)];
+
+                } else if (isGoldRecord) {
+                    // Altın hareket dosyası (AccountGoldRecordExport)
+                    for (let i = 2; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row[0]) continue;
+
+                        const tx = {
+                            accountId: String(row[0]),
+                            gameId: row[1],
+                            businessId: row[2],
+                            type: row[3],
+                            amount: parseFloat(row[4]) || 0,
+                            balanceBefore: parseFloat(row[5]) || 0,
+                            balanceAfter: parseFloat(row[6]) || 0,
+                            timestamp: this.parseDate(row[7]),
+                            rawTime: row[7]
+                        };
+
+                        transactions.push(tx);
+                    }
+
+                    // Group by account
+                    const accounts = {};
+                    transactions.forEach(tx => {
+                        if (!accounts[tx.accountId]) accounts[tx.accountId] = [];
+                        accounts[tx.accountId].push(tx);
+                    });
+
+                    // Analyze each account
+                    const results = [];
+                    for (const [accountId, txs] of Object.entries(accounts)) {
+                        results.push(this.analyzeAccount(accountId, txs));
+                    }
+
+                    return results.sort((a, b) => b.riskScore - a.riskScore);
+                } else {
+                    // Bilinmeyen format - varsayılan işlem
+                    alert('Dosya formatı tanınamadı. Lütfen AccountGoldRecordExport veya AccountGameStatementExport dosyası yükleyin.');
+                    return [];
                 }
-
-                // Group by account
-                const accounts = {};
-                transactions.forEach(tx => {
-                    if (!accounts[tx.accountId]) accounts[tx.accountId] = [];
-                    accounts[tx.accountId].push(tx);
-                });
-
-                // Analyze each account
-                const results = [];
-                for (const [accountId, txs] of Object.entries(accounts)) {
-                    results.push(this.analyzeAccount(accountId, txs));
-                }
-
-                return results.sort((a, b) => b.riskScore - a.riskScore);
             }
 
             parseDate(dateStr) {
@@ -942,7 +1004,7 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
 
-                    currentData = analyzer.processExcel(firstSheet);
+                    currentData = analyzer.processExcel(firstSheet, file.name);
 
                     setTimeout(() => {
                         loader.style.display = 'none';
